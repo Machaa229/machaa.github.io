@@ -3,43 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gmail Tabanlı Mesajlaşma Aracı - Sade Tasarım</title>
+    <title>Gmail Tabanlı Mesajlaşma Aracı - Gelişmiş</title>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #ddd;
+            --message-bg: #f1f1f1;
+            --own-message-bg: #007bff;
+            --header-bg: #ffffff;
+            --section-bg: #f0f0f0;
+            --active-bg: #e8f4fd;
+            --hover-bg: #f0f0f0;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+            --message-bg: #2a2a2a;
+            --own-message-bg: #007bff;
+            --header-bg: #1e1e1e;
+            --section-bg: #2a2a2a;
+            --active-bg: #333;
+            --hover-bg: #333;
+        }
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
             padding: 0; 
-            background: #f5f5f5; 
+            background: var(--bg-color); 
+            color: var(--text-color);
             height: 100vh; 
             overflow: hidden;
+            transition: background 0.3s, color 0.3s;
         }
         .login-container { 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             height: 100vh; 
-            background: #ffffff; 
+            background: var(--header-bg); 
         }
         .login-box { 
-            background: #ffffff; 
+            background: var(--card-bg); 
             padding: 30px; 
             border-radius: 10px; 
             box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
             text-align: center; 
             width: 90%; 
             max-width: 400px; 
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
         }
         .app { display: flex; height: 100vh; }
         .sidebar { 
             width: 30%; 
             max-width: 400px; 
-            background: #ffffff; 
-            border-right: 1px solid #ddd; 
+            background: var(--card-bg); 
+            border-right: 1px solid var(--border-color); 
             overflow-y: auto; 
             transition: transform 0.3s ease;
         }
@@ -47,6 +74,9 @@
             flex: 1; 
             display: flex; 
             flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
         }
         .mobile-menu-btn { 
             display: none; 
@@ -59,21 +89,64 @@
             left: 10px; 
             top: 10px; 
             z-index: 11; 
+            color: var(--text-color);
         }
         .header { 
-            background: #ffffff; 
-            color: #333; 
+            background: var(--header-bg); 
+            color: var(--text-color); 
             padding: 15px; 
             text-align: center; 
-            border-bottom: 1px solid #ddd;
-            position: relative;
+            border-bottom: 1px solid var(--border-color);
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 5;
         }
         .header h2 { cursor: pointer; text-decoration: underline; }
+        .messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px; 
+            background: var(--card-bg); 
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 60px; /* Header yüksekliğine göre ayarla */
+            bottom: 80px; /* Input yüksekliğine göre ayarla */
+            left: 0;
+        }
+        .input-area { 
+            display: flex; 
+            padding: 10px; 
+            background: var(--card-bg); 
+            border-top: 1px solid var(--border-color); 
+            gap: 10px; 
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            z-index: 5;
+        }
+        .input-area input, .input-area button { 
+            flex: 1; 
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 20px; 
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+        .input-area button { 
+            background: var(--own-message-bg); 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            width: auto; 
+            flex: 0 0 auto;
+        }
         .user-info { 
             padding: 10px; 
-            background: #f9f9f9; 
+            background: var(--section-bg); 
             text-align: center; 
-            border-bottom: 1px solid #ddd; 
+            border-bottom: 1px solid var(--border-color); 
         }
         .logout-btn { 
             background: #ff4444; 
@@ -83,6 +156,15 @@
             border-radius: 5px; 
             cursor: pointer; 
         }
+        .theme-toggle { 
+            background: var(--own-message-bg); 
+            color: white; 
+            border: none; 
+            padding: 5px 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-left: 10px;
+        }
         .chat-list, .saved-list { 
             list-style: none; 
             padding: 0; 
@@ -90,17 +172,20 @@
         }
         .chat-item, .saved-item { 
             padding: 15px; 
-            border-bottom: 1px solid #eee; 
+            border-bottom: 1px solid var(--border-color); 
             cursor: pointer; 
             transition: background 0.2s; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
         }
-        .chat-item:hover, .saved-item:hover { background: #f0f0f0; }
-        .chat-item.active, .saved-item.active { background: #e8f4fd; }
-        .chat-item strong, .saved-item strong { display: block; color: #333; margin-bottom: 5px; }
+        .chat-item:hover, .saved-item:hover { background: var(--hover-bg); }
+        .chat-item.active, .saved-item.active { background: var(--active-bg); }
+        .chat-item strong, .saved-item strong { display: block; color: var(--text-color); margin-bottom: 5px; }
         .chat-item small, .saved-item small { color: #666; font-size: 12px; }
+        .status-online { color: #28a745; font-size: 10px; }
+        .status-typing { color: #ffc107; font-size: 12px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .delete-btn { 
             background: #ff4444; 
             color: white; 
@@ -110,61 +195,37 @@
             cursor: pointer; 
             font-size: 12px; 
         }
-        .section-title { padding: 10px 15px; background: #f0f0f0; font-weight: bold; border-bottom: 1px solid #ddd; }
-        .messages { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 10px; 
-            background: #ffffff; 
-        }
+        .section-title { padding: 10px 15px; background: var(--section-bg); font-weight: bold; border-bottom: 1px solid var(--border-color); color: var(--text-color); }
         .message { 
             margin: 10px 0; 
             padding: 8px 12px; 
             max-width: 70%; 
             border-radius: 10px; 
             position: relative; 
-            background: #f1f1f1;
+            background: var(--message-bg);
+            color: var(--text-color);
         }
         .own { 
-            background: #007bff; 
+            background: var(--own-message-bg); 
             color: white; 
             margin-left: auto; 
             text-align: right; 
         }
-        .input-area { 
-            display: flex; 
-            padding: 10px; 
-            background: #ffffff; 
-            border-top: 1px solid #ddd; 
-            gap: 10px; 
-        }
-        .input-area input, .input-area button { 
-            flex: 1; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 20px; 
-        }
-        .input-area button { 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            width: auto; 
-            flex: 0 0 auto;
-        }
         .hidden { display: none; }
-        input { padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; width: 100%; }
-        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        input { padding: 10px; margin: 10px 0; border: 1px solid var(--border-color); border-radius: 5px; width: 100%; background: var(--card-bg); color: var(--text-color); }
+        button { padding: 10px; background: var(--own-message-bg); color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
         #new-chat-section { position: relative; }
         #new-recipient { 
             width: 100%; 
             padding: 10px; 
-            border: 1px solid #ddd; 
+            border: 1px solid var(--border-color); 
             border-radius: 5px; 
             margin-bottom: 5px; 
+            background: var(--card-bg); 
+            color: var(--text-color);
         }
         #start-chat-btn { 
-            background: #007bff; 
+            background: var(--own-message-bg); 
             color: white; 
             border: none; 
             padding: 10px; 
@@ -178,12 +239,19 @@
             cursor: not-allowed; 
         }
         #suggestions { display: none; } /* Önerileri gizle */
+        .emoji-picker { position: absolute; bottom: 50px; right: 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 5px; padding: 10px; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+        .emoji { font-size: 20px; cursor: pointer; margin: 5px; }
         @media (max-width: 768px) { 
             .mobile-menu-btn { display: block; }
+            .mobile-menu-btn::before { content: '⋮⋮⋮'; } /* 3 nokta */
             .sidebar { width: 100%; position: absolute; z-index: 10; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .chat-area { width: 100%; }
             .header { padding-left: 50px; }
+            .messages { top: 70px; bottom: 90px; } /* Mobil için ayarla */
+            .input-area { padding: 5px; gap: 5px; }
+            .input-area input, .input-area button { padding: 8px; font-size: 14px; }
+            .emoji-picker { right: 5px; bottom: 60px; max-width: 250px; }
         }
     </style>
 </head>
@@ -206,6 +274,7 @@
         <div id="sidebar" class="sidebar">
             <div class="user-info">
                 <strong id="username-display"></strong>
+                <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Tema</button>
                 <button class="logout-btn" onclick="logout()">Çıkış</button>
             </div>
             <div class="section-title">Geçmiş Konuşmalar</div>
@@ -225,9 +294,19 @@
             </div>
             <div id="messages" class="messages"></div>
             <div id="input-area" class="input-area hidden">
-                <input type="text" id="message-input" placeholder="Mesaj yazın..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">Gönder</button>
+                <input type="text" id="message-input" placeholder="Mesaj yazın..." onkeypress="handleKeyPress(event)" oninput="handleTyping()">
+                <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                <div class="emoji-picker" id="emoji-picker">
+                    <div class="emoji" onclick="addEmoji('😀')">😀</div>
+                    <div class="emoji" onclick="addEmoji('😂')">😂</div>
+                    <div class="emoji" onclick="addEmoji('❤️')">❤️</div>
+                    <div class="emoji" onclick="addEmoji('👍')">👍</div>
+                    <div class="emoji" onclick="addEmoji('🔥')">🔥</div>
+                    <!-- Daha fazla emoji ekleyebilirsin -->
+                </div>
+                <button onclick="toggleEmojiPicker()"><i class="fas fa-smile"></i></button>
             </div>
+            <div id="typing-indicator" class="status-typing hidden" style="text-align: center; padding: 10px;">Karşı taraf yazıyor...</div>
         </div>
     </div>
 
@@ -250,7 +329,61 @@
         let currentUser = null;
         let currentChatWith = null;
         let currentChatId = null;
-        let existingChats = new Set(); // Mevcut sohbetleri tut
+        let existingChats = new Set();
+        let typingTimeout;
+
+        // Tema değiştir
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Sayfa yüklenince tema uygula
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+        });
+
+        // Emoji picker toggle
+        function toggleEmojiPicker() {
+            const picker = document.getElementById('emoji-picker');
+            picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Emoji ekle
+        function addEmoji(emoji) {
+            const input = document.getElementById('message-input');
+            input.value += emoji;
+            input.focus();
+            toggleEmojiPicker();
+        }
+
+        // Typing indicator
+        function handleTyping() {
+            if (!currentChatId) return;
+            db.collection('chats').doc(currentChatId).update({
+                [`typing.${currentUser.username}`]: true
+            });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                db.collection('chats').doc(currentChatId).update({
+                    [`typing.${currentUser.username}`]: false
+                });
+            }, 1000);
+        }
+
+        // Online status güncelle (basit last seen)
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                db.collection('users').doc(currentUser.username).update({
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                db.collection('users').doc(currentUser.username).onSnapshot(() => {}); // Presence için
+            }
+        });
 
         // Mobil sidebar toggle
         function toggleSidebar() {
@@ -294,6 +427,7 @@
                 db.collection('users').doc(username).set({
                     email: email,
                     uid: currentUser.uid,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => {
                     document.getElementById('login-screen').classList.add('hidden');
@@ -316,7 +450,7 @@
             });
         }
 
-        // Mevcut sohbetleri yükle
+        // Mevcut sohbetleri yükle (online status ile)
         function loadChats() {
             existingChats.clear();
             db.collectionGroup('messages').where('from', '==', currentUser.username).get().then((querySnapshot) => {
@@ -345,7 +479,10 @@
                     chats.forEach(chat => {
                         const li = document.createElement('li');
                         li.className = 'chat-item';
-                        li.innerHTML = `<strong>${chat.opponent}</strong><small>${chat.lastMessage} - ${chat.timestamp.toLocaleTimeString()}</small>`;
+                        li.innerHTML = `
+                            <strong>${chat.opponent}</strong>
+                            <small>${chat.lastMessage} - ${chat.timestamp.toLocaleTimeString()} <span class="status-online">🟢</span></small>
+                        `;
                         li.onclick = (e) => {
                             if (e.target.classList.contains('delete-btn')) return;
                             openChat(chat.opponent, chat.id);
@@ -467,10 +604,11 @@
             }).then(() => loadChats());
         }
 
-        // Mesajları yükle
+        // Mesajları yükle (typing indicator ile)
         function loadMessages() {
             if (!currentChatId) return;
             const messagesDiv = document.getElementById('messages');
+            const typingIndicator = document.getElementById('typing-indicator');
             messagesDiv.innerHTML = '';
             db.collection('chats').doc(currentChatId).collection('messages').orderBy('timestamp').onSnapshot((snapshot) => {
                 messagesDiv.innerHTML = '';
@@ -482,6 +620,15 @@
                     messagesDiv.appendChild(div);
                 });
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+            // Typing listener
+            db.collection('chats').doc(currentChatId).onSnapshot((doc) => {
+                const data = doc.data();
+                if (data && data.typing && data.typing[currentChatWith]) {
+                    typingIndicator.classList.remove('hidden');
+                } else {
+                    typingIndicator.classList.add('hidden');
+                }
             });
         }
 
