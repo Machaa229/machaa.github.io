@@ -41,11 +41,24 @@
             background: #ffffff; 
             border-right: 1px solid #ddd; 
             overflow-y: auto; 
+            transition: transform 0.3s ease;
         }
         .chat-area { 
             flex: 1; 
             display: flex; 
             flex-direction: column; 
+        }
+        .mobile-menu-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            font-size: 24px; 
+            cursor: pointer; 
+            padding: 10px; 
+            position: absolute; 
+            left: 10px; 
+            top: 10px; 
+            z-index: 11; 
         }
         .header { 
             background: #ffffff; 
@@ -53,6 +66,7 @@
             padding: 15px; 
             text-align: center; 
             border-bottom: 1px solid #ddd;
+            position: relative;
         }
         .header h2 { cursor: pointer; text-decoration: underline; }
         .user-info { 
@@ -165,9 +179,11 @@
         }
         #suggestions { display: none; } /* Önerileri gizle */
         @media (max-width: 768px) { 
+            .mobile-menu-btn { display: block; }
             .sidebar { width: 100%; position: absolute; z-index: 10; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .chat-area { width: 100%; }
+            .header { padding-left: 50px; }
         }
     </style>
 </head>
@@ -183,6 +199,9 @@
 
     <!-- Ana App (Gizli Başlangıçta) -->
     <div id="app" class="app hidden">
+        <!-- Mobil Menü Butonu -->
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+
         <!-- Sidebar: Sohbet Listesi -->
         <div id="sidebar" class="sidebar">
             <div class="user-info">
@@ -232,6 +251,12 @@
         let currentChatWith = null;
         let currentChatId = null;
         let existingChats = new Set(); // Mevcut sohbetleri tut
+
+        // Mobil sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
 
         // LocalStorage ile chat geçmişi
         function saveCurrentChat(recipient) {
@@ -389,6 +414,8 @@
             document.getElementById('input-area').classList.remove('hidden');
             highlightChatItem(recipient, 'chat-list');
             highlightChatItem(recipient, 'saved-list');
+            // Mobil sidebar'ı kapat
+            document.getElementById('sidebar').classList.remove('open');
         }
 
         // Chat item'ı highlight et (belirli liste için)
